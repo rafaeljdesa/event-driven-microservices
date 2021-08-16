@@ -1,26 +1,27 @@
-package com.appsdeveloperblog.store.ProductsService.rest;
+package com.appsdeveloperblog.store.ProductsService.command.rest;
 
 import com.appsdeveloperblog.store.ProductsService.command.CreateProductCommand;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/products")
-public class ProductsController {
+public class ProductsCommandController {
 
     private final Environment env;
     private final CommandGateway commandGateway;
 
-    public ProductsController(Environment env, CommandGateway commandGateway) {
+    public ProductsCommandController(Environment env, CommandGateway commandGateway) {
         this.env = env;
         this.commandGateway = commandGateway;
     }
 
     @PostMapping
-    public String createProduct(@RequestBody CreateProductRestModel createProductRestModel) {
+    public String createProduct(@Valid @RequestBody CreateProductRestModel createProductRestModel) {
 
         CreateProductCommand createProductCommand = CreateProductCommand.builder()
             .price(createProductRestModel.getPrice())
@@ -38,21 +39,6 @@ public class ProductsController {
         }
 
         return returnValue;
-    }
-
-    @GetMapping
-    public String getProduct() {
-        return "Get product";
-    }
-
-    @PutMapping
-    public String updateProduct() {
-        return "";
-    }
-
-    @DeleteMapping
-    public String deleteProduct() {
-        return "";
     }
 
 }
