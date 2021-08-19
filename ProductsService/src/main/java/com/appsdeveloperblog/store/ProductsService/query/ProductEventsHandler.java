@@ -5,6 +5,7 @@ import com.appsdeveloperblog.store.ProductsService.core.data.ProductRepository;
 import com.appsdeveloperblog.store.ProductsService.core.events.ProductCreatedEvent;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,16 @@ public class ProductEventsHandler {
 
     public ProductEventsHandler(ProductRepository productRepository) {
         this.productRepository = productRepository;
+    }
+
+    @ExceptionHandler(resultType = IllegalArgumentException.class)
+    public void handle(IllegalArgumentException e) {
+        throw e;
+    }
+
+    @ExceptionHandler(resultType = Exception.class)
+    public void handle(Exception e) throws Exception {
+        throw e;
     }
 
     @EventHandler
