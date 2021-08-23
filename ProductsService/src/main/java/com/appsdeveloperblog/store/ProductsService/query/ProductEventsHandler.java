@@ -3,6 +3,7 @@ package com.appsdeveloperblog.store.ProductsService.query;
 import com.appsdeveloperblog.store.ProductsService.core.data.ProductEntity;
 import com.appsdeveloperblog.store.ProductsService.core.data.ProductRepository;
 import com.appsdeveloperblog.store.ProductsService.core.events.ProductCreatedEvent;
+import com.appsdeveloperblog.store.core.events.ProductReservedEvent;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
@@ -33,6 +34,13 @@ public class ProductEventsHandler {
     public void on(ProductCreatedEvent productCreatedEvent) {
         ProductEntity productEntity = new ProductEntity();
         BeanUtils.copyProperties(productCreatedEvent, productEntity);
+        productRepository.save(productEntity);
+    }
+
+    @EventHandler
+    public void on(ProductReservedEvent productReservedEvent) {
+        ProductEntity productEntity = productRepository.findByProductId(productReservedEvent.getProductId());
+        productEntity.setQuantity(productEntity.getQuantity() - productReservedEvent.getQuantity());
         productRepository.save(productEntity);
     }
 

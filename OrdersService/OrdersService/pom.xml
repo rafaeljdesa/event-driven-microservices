@@ -64,6 +64,13 @@
 			<artifactId>guava</artifactId>
 			<version>30.1-jre</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.appsdeveloperblog.store</groupId>
+			<artifactId>Core</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
