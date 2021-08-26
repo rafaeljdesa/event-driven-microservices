@@ -2,13 +2,18 @@ package com.appsdeveloperblog.store.ordersservice.saga;
 
 import com.appsdeveloperblog.store.core.command.ProcessPaymentCommand;
 import com.appsdeveloperblog.store.core.command.ReserveProductCommand;
+import com.appsdeveloperblog.store.core.events.PaymentProcessedEvent;
 import com.appsdeveloperblog.store.core.events.ProductReservedEvent;
 import com.appsdeveloperblog.store.core.model.User;
 import com.appsdeveloperblog.store.core.query.FetchUserPaymentDetailsQuery;
+import com.appsdeveloperblog.store.ordersservice.command.ApproveOrderCommand;
+import com.appsdeveloperblog.store.ordersservice.core.events.OrderApprovedEvent;
 import com.appsdeveloperblog.store.ordersservice.core.events.OrderCreatedEvent;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
+import org.axonframework.modelling.saga.SagaLifecycle;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.spring.stereotype.Saga;
@@ -94,6 +99,20 @@ public class OrderSaga {
             // start compensating transaction
         }
 
+    }
+
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(PaymentProcessedEvent paymentProcessedEvent) {
+        ApproveOrderCommand approveOrderCommand =
+                new ApproveOrderCommand(paymentProcessedEvent.getOrderId());
+        commandGateway.send(approveOrderCommand);
+    }
+
+    @EndSaga
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(OrderApprovedEvent orderApprovedEvent) {
+        LOGGER.info("Order is approved. Saga is complete for orderId: " + orderApprovedEvent);
+        //SagaLifecycle.end();
     }
 
 }

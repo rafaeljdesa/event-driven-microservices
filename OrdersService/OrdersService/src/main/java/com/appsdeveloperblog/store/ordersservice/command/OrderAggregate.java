@@ -1,6 +1,7 @@
 package com.appsdeveloperblog.store.ordersservice.command;
 
 import com.appsdeveloperblog.store.ordersservice.core.data.OrderStatus;
+import com.appsdeveloperblog.store.ordersservice.core.events.OrderApprovedEvent;
 import com.appsdeveloperblog.store.ordersservice.core.events.OrderCreatedEvent;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -25,11 +26,8 @@ public class OrderAggregate {
 
     @CommandHandler
     public OrderAggregate(CreateOrderCommand createOrderCommand) {
-
         OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent();
-
         BeanUtils.copyProperties(createOrderCommand, orderCreatedEvent);
-
         AggregateLifecycle.apply(orderCreatedEvent);
     }
 
@@ -41,6 +39,17 @@ public class OrderAggregate {
         this.quantity = orderCreatedEvent.getQuantity();
         this.addressId = orderCreatedEvent.getAddressId();
         this.orderStatus = orderCreatedEvent.getOrderStatus();
+    }
+
+    @CommandHandler
+    public void handle(ApproveOrderCommand approveOrderCommand) {
+        OrderApprovedEvent orderApprovedEvent = new OrderApprovedEvent(approveOrderCommand.getOrderId());
+        AggregateLifecycle.apply(orderApprovedEvent);
+    }
+
+    @EventSourcingHandler
+    public void on(OrderApprovedEvent orderApprovedEvent) {
+        this.orderStatus = orderApprovedEvent.getOrderStatus();
     }
 
 }
