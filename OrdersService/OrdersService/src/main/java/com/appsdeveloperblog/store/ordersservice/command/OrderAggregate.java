@@ -3,6 +3,7 @@ package com.appsdeveloperblog.store.ordersservice.command;
 import com.appsdeveloperblog.store.ordersservice.core.data.OrderStatus;
 import com.appsdeveloperblog.store.ordersservice.core.events.OrderApprovedEvent;
 import com.appsdeveloperblog.store.ordersservice.core.events.OrderCreatedEvent;
+import com.appsdeveloperblog.store.ordersservice.core.events.OrderRejectedEvent;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -47,9 +48,21 @@ public class OrderAggregate {
         AggregateLifecycle.apply(orderApprovedEvent);
     }
 
+    @CommandHandler
+    public void handle(RejectOrderCommand rejectOrderCommand) {
+        OrderRejectedEvent orderRejectedEvent =
+                new OrderRejectedEvent(rejectOrderCommand.getOrderId(), rejectOrderCommand.getReason());
+        AggregateLifecycle.apply(orderRejectedEvent);
+    }
+
     @EventSourcingHandler
     public void on(OrderApprovedEvent orderApprovedEvent) {
         this.orderStatus = orderApprovedEvent.getOrderStatus();
+    }
+
+    @EventSourcingHandler
+    public void on(OrderRejectedEvent orderRejectedEvent) {
+        this.orderStatus = orderRejectedEvent.getOrderStatus();
     }
 
 }
