@@ -10,9 +10,11 @@ import com.appsdeveloperblog.store.core.model.User;
 import com.appsdeveloperblog.store.core.query.FetchUserPaymentDetailsQuery;
 import com.appsdeveloperblog.store.ordersservice.command.ApproveOrderCommand;
 import com.appsdeveloperblog.store.ordersservice.command.RejectOrderCommand;
+import com.appsdeveloperblog.store.ordersservice.core.data.OrderSummay;
 import com.appsdeveloperblog.store.ordersservice.core.events.OrderApprovedEvent;
 import com.appsdeveloperblog.store.ordersservice.core.events.OrderCreatedEvent;
 import com.appsdeveloperblog.store.ordersservice.core.events.OrderRejectedEvent;
+import com.appsdeveloperblog.store.ordersservice.query.FindOrderQuery;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.annotation.DeadlineHandler;
@@ -20,6 +22,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +48,9 @@ public class OrderSaga {
     @Autowired
     private transient DeadlineManager deadlineManager;
 
+    @Autowired
+    private transient QueryUpdateEmitter queryUpdateEmitter;
+
     @StartSaga
     @OrderSagaEventHandler
     public void handle(OrderCreatedEvent orderCreatedEvent) {
@@ -61,6 +67,9 @@ public class OrderSaga {
         commandGateway.send(reserveProductCommand, (commandMessage, commandResultMessage) -> {
             if (commandResultMessage.isExceptional()) {
                 // start compensating transaction
+                RejectOrderCommand rejectOrderCommand =
+                        new RejectOrderCommand(orderCreatedEvent.getOrderId(), commandResultMessage.exceptionResult().getMessage());
+                commandGateway.send(rejectOrderCommand);
             }
         });
     }
@@ -145,6 +154,11 @@ public class OrderSaga {
     public void handle(OrderApprovedEvent orderApprovedEvent) {
         LOGGER.info("Order is approved. Saga is complete for orderId: " + orderApprovedEvent);
         //SagaLifecycle.end();
+        queryUpdateEmitter.emit(
+            FindOrderQuery.class,
+            query -> true,
+            new OrderSummay(orderApprovedEvent.getOrderId(), orderApprovedEvent.getOrderStatus(), "")
+        );
     }
 
     @OrderSagaEventHandler
@@ -159,6 +173,11 @@ public class OrderSaga {
     @OrderSagaEventHandler
     public void handle(OrderRejectedEvent orderRejectedEvent) {
         LOGGER.info("Successfully rejected order with id " + orderRejectedEvent.getOrderId());
+        queryUpdateEmitter.emit(
+            FindOrderQuery.class,
+            query -> true,
+            new OrderSummay(orderRejectedEvent.getOrderId(), orderRejectedEvent.getOrderStatus(), orderRejectedEvent.getReason())
+        );
     }
 
     private void cancelProductReservation(ProductReservedEvent productReservedEvent, String reason) {

@@ -2,7 +2,12 @@ package com.appsdeveloperblog.store.ordersservice.command.rest;
 
 import com.appsdeveloperblog.store.ordersservice.command.CreateOrderCommand;
 import com.appsdeveloperblog.store.ordersservice.core.data.OrderStatus;
+import com.appsdeveloperblog.store.ordersservice.core.data.OrderSummay;
+import com.appsdeveloperblog.store.ordersservice.query.FindOrderQuery;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,8 +26,13 @@ public class OrdersCommandController {
     @Autowired
     private CommandGateway commandGateway;
 
+    @Autowired
+    private QueryGateway queryGateway;
+
     @PostMapping
-    public String createOrder(@RequestBody @Valid CreateOrderRestModel createOrderRestModel) {
+    public OrderSummay createOrder(@RequestBody @Valid CreateOrderRestModel createOrderRestModel) {
+
+        String userId = UUID.randomUUID().toString();
 
         CreateOrderCommand createOrderCommand = CreateOrderCommand.builder()
             .orderId(UUID.randomUUID().toString())
@@ -33,7 +43,15 @@ public class OrdersCommandController {
             .orderStatus(OrderStatus.CREATED)
             .build();
 
-        return commandGateway.sendAndWait(createOrderCommand);
+        SubscriptionQueryResult<OrderSummay, OrderSummay> queryResult = queryGateway.subscriptionQuery(new FindOrderQuery(userId),
+                ResponseTypes.instanceOf(OrderSummay.class), ResponseTypes.instanceOf(OrderSummay.class));
+
+        try {
+            commandGateway.sendAndWait(createOrderCommand);
+            return queryResult.updates().blockFirst();
+        } finally {
+            queryResult.close();
+        }
     }
 
 }
