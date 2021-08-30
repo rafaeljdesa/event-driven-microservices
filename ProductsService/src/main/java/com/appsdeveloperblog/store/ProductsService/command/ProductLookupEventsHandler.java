@@ -5,6 +5,7 @@ import com.appsdeveloperblog.store.ProductsService.core.data.ProductLookupReposi
 import com.appsdeveloperblog.store.ProductsService.core.events.ProductCreatedEvent;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.ResetHandler;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -24,6 +25,11 @@ public class ProductLookupEventsHandler {
             event.getTitle()
         );
         productLookupRepository.save(productLookupEntity);
+    }
+
+    @ResetHandler
+    public void reset() {
+        productLookupRepository.deleteAll();
     }
 
 }

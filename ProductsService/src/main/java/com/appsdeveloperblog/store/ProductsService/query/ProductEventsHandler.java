@@ -7,6 +7,7 @@ import com.appsdeveloperblog.store.core.events.ProductReservationCancelledEvent;
 import com.appsdeveloperblog.store.core.events.ProductReservedEvent;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.ResetHandler;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,11 @@ public class ProductEventsHandler {
         productRepository.save(productEntity);
 
         LOGGER.debug("ProductReservationCancelledEvent: New product quantity " + productEntity.getQuantity());
+    }
+
+    @ResetHandler
+    public void reset() {
+        productRepository.deleteAll();
     }
 
 }
